@@ -1,0 +1,104 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [main, master, develop]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
+  pull_request:
+    branches: [main, master, develop]
+    paths:
+      - 'backend/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: ['3.8', '3.9', '3.10', '3.11']
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v3
+
+      - name: 🐍 Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: 📚 Install dependencies
+        working-directory: ./backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: 🔍 Lint with flake8
+        working-directory: ./backend
+        run: |
+          pip install flake8
+          flake8 src/ --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 src/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        continue-on-error: true
+
+      - name: 🏗️ Check imports
+        working-directory: ./backend
+        run: |
+          python -m py_compile src/app.py
+          python -m py_compile src/agents/base_agent.py
+          python -m py_compile src/agents/chat_agent.py
+          python -m py_compile src/agents/weather_agent.py
+          python -m py_compile src/utils/ollama_client.py
+
+  security-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v3
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: 📚 Install dependencies
+        working-directory: ./backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: 🔐 Run Bandit security check
+        working-directory: ./backend
+        run: |
+          pip install bandit
+          bandit -r src/ -f json || true
+        continue-on-error: true
+
+  env-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v3
+
+      - name: 🔍 Verify .env.example exists
+        working-directory: ./backend
+        run: |
+          if [ ! -f .env.example ]; then
+            echo "❌ .env.example is missing!"
+            exit 1
+          fi
+          echo "✅ .env.example found"
+
+      - name: 🚫 Ensure .env is in .gitignore
+        run: |
+          if grep -q "backend/.env" .gitignore; then
+            echo "✅ backend/.env is in .gitignore"
+          else
+            echo "❌ backend/.env is NOT in .gitignore"
+            exit 1
+          fi

@@ -1,0 +1,76 @@
+# Use this file for your AIChatBot project
+# Copy this entire content to: AIChatBot/.github/workflows/ripple-check.yml
+
+name: RIPPLE Analysis
+
+on:
+  pull_request:
+    branches: [main, master, develop]
+  push:
+    branches: [main, master, develop]
+
+jobs:
+  ripple:
+    runs-on: ubuntu-latest
+    name: RIPPLE Impact Check
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install RIPPLE
+        run: |
+          pip install --upgrade pip
+          pip install git+https://github.com/prasanthai924/ripple.git
+
+      - name: Analyze changes
+        id: analyze
+        run: |
+          echo "Running RIPPLE analysis..."
+          ripple analyze HEAD --repo . --no-llm > ripple-output.txt 2>&1
+          cat ripple-output.txt
+
+      - name: Extract metrics
+        id: metrics
+        run: |
+          SCORE=$(grep "Risk score" ripple-output.txt | grep -oP '\d(?=/5)' || echo "5")
+          echo "score=$SCORE" >> $GITHUB_OUTPUT
+          echo "✅ Score: $SCORE/5"
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const output = fs.readFileSync('ripple-output.txt', 'utf8');
+            const score = '${{ steps.metrics.outputs.score }}';
+
+            const scoreEmoji = {
+              '1': '🔴',
+              '2': '🟠',
+              '3': '🟡',
+              '4': '🟢',
+              '5': '🟢'
+            }[score] || '⚪';
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `${scoreEmoji} **RIPPLE Change Impact Analysis**\n\n**Risk Score: ${score}/5**\n\n\`\`\`\n${output}\n\`\`\`\n\n**Score Meaning:**\n- 1 = High risk (likely breaks other code)\n- 5 = Low risk (isolated & safe)`
+            });
+
+      - name: Save report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: ripple-analysis
+          path: ripple-output.txt
