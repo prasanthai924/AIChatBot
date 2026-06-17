@@ -1,0 +1,15 @@
+# Python Programming Guide
+
+Python is a high-level, interpreted programming language known for its simplicity 
+and readability. It supports multiple programming paradigms including procedural, 
+object-oriented, and functional programming.
+
+Key Features:
+- Easy to learn and use
+- Large standard library
+- Dynamic typing
+- Extensive ecosystem (NumPy, Pandas, TensorFlow)
+- Used in web development, data science, AI, and automation
+
+Python is widely used in machine learning and data science projects because of 
+libraries like TensorFlow, PyTorch, and Scikit-learn.
