@@ -17,7 +17,7 @@ jobs:
 
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: 📝 Lint markdown files
         uses: nosborn/github-action-markdown-cli@v3.3.0
@@ -31,7 +31,7 @@ jobs:
 
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: ✅ Verify README exists
         run: |
@@ -69,7 +69,7 @@ jobs:
 
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: 🔗 Check markdown links
         uses: gaurav-nelson/github-action-markdown-link-check@v1

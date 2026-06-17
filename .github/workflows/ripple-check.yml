@@ -70,7 +70,8 @@ jobs:
 
       - name: Save report
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ripple-analysis
           path: ripple-output.txt
+          retention-days: 30
